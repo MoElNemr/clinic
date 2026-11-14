@@ -21,12 +21,12 @@ class PlanController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name_ar' => 'required|string',
-            'price_monthly' => 'required|numeric',
-            'price_yearly' => 'required|numeric',
+            'name_ar' => 'required|string|max:255',
+            'price_monthly' => 'required|numeric|min:0',
+            'price_yearly' => 'required|numeric|min:0',
             'max_clinics' => 'required|integer',
-            'free_whatsapp_quota_monthly' => 'nullable|integer',
-            'free_sms_quota_monthly' => 'nullable|integer',
+            'free_whatsapp_quota_monthly' => 'nullable|integer|min:0',
+            'free_sms_quota_monthly' => 'nullable|integer|min:0',
             'allow_custom_domain' => 'boolean',
             'allow_custom_website' => 'boolean',
             'is_active' => 'boolean',
@@ -39,7 +39,20 @@ class PlanController extends Controller
     public function update(int $id, Request $request): JsonResponse
     {
         $plan = Plan::findOrFail($id);
-        $plan->update($request->all());
+
+        $data = $request->validate([
+            'name_ar' => 'sometimes|required|string|max:255',
+            'price_monthly' => 'sometimes|required|numeric|min:0',
+            'price_yearly' => 'sometimes|required|numeric|min:0',
+            'max_clinics' => 'sometimes|required|integer',
+            'free_whatsapp_quota_monthly' => 'nullable|integer|min:0',
+            'free_sms_quota_monthly' => 'nullable|integer|min:0',
+            'allow_custom_domain' => 'boolean',
+            'allow_custom_website' => 'boolean',
+            'is_active' => 'boolean',
+        ]);
+
+        $plan->update($data);
         return $this->successResponse($plan, 'تم تحديث الباقة بنجاح');
     }
 

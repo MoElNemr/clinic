@@ -18,14 +18,16 @@ class DashboardController extends Controller
     public function stats(): JsonResponse
     {
         $totalDoctors = Tenant::count();
-        $activeClinics = Clinic::where('is_active', true)->count();
-        $bookingsToday = Appointment::whereDate('appointment_date', today())->count();
+        $activeClinics = Clinic::withoutGlobalScopes()->where('is_active', true)->count();
+        $bookingsToday = Appointment::withoutGlobalScopes()->whereDate('appointment_date', today())->count();
 
         $totalWhatsappUsed = Tenant::sum('whatsapp_used_this_month');
         $totalSmsUsed = Tenant::sum('sms_used_this_month');
 
         $pendingLeads = DoctorLead::where('status', 'new')->count();
-        $monthlyRevenue = WalletTopup::where('status', 'paid')
+        $monthlyRevenue = WalletTopup::withoutGlobalScopes()
+            ->where('status', 'paid')
+            ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->sum('amount_egp');
 
@@ -33,8 +35,8 @@ class DashboardController extends Controller
             'total_doctors' => $totalDoctors,
             'active_clinics' => $activeClinics,
             'bookings_today' => $bookingsToday,
-            'whatsapp_used_this_month' => $totalWhatsappUsed,
-            'sms_used_this_month' => $totalSmsUsed,
+            'whatsapp_used_this_month' => (int)$totalWhatsappUsed,
+            'sms_used_this_month' => (int)$totalSmsUsed,
             'pending_leads' => $pendingLeads,
             'monthly_revenue_egp' => (float)$monthlyRevenue,
         ]);

@@ -8,7 +8,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import axios from 'axios';
+import client from '../../api/client';
 
 const isOffline = ref(false);
 let heartbeatTimer = null;
@@ -20,7 +20,7 @@ const checkServer = async () => {
     return;
   }
   try {
-    await axios.get('/api/clinic/heartbeat', { timeout: 4000 });
+    await client.get('/heartbeat', { timeout: 4000, skipGlobalError: true });
     consecutiveFailures = 0;
     isOffline.value = false;
   } catch (e) {
