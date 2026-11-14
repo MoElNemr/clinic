@@ -288,11 +288,22 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-content-primary mb-1">تاريخ العطلة</label>
-            <input v-model="emergencyDayOff.off_date" type="date" class="w-full px-3 py-2 text-xs bg-surface-elevated rounded-xl border border-line-subtle text-content-primary font-mono" />
+            <input v-model="emergencyDayOff.date" type="date" class="w-full px-3 py-2 text-xs bg-surface-elevated rounded-xl border border-line-subtle text-content-primary font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-content-primary mb-1">الإجراء المطلوب لمواعيد هذا اليوم</label>
+            <select v-model="emergencyDayOff.action" class="w-full px-3 py-2 text-xs bg-surface-elevated rounded-xl border border-line-subtle text-content-primary">
+              <option value="move_to_date">ترحيل المواعيد إلى تاريخ بديل وإشعار المرضى</option>
+              <option value="cancel_and_notify">إلغاء المواعيد وإشعار المرضى بالاعتذار</option>
+            </select>
+          </div>
+          <div v-if="emergencyDayOff.action === 'move_to_date'">
+            <label class="block text-xs font-bold text-content-primary mb-1">التاريخ البديل للترحيل</label>
+            <input v-model="emergencyDayOff.target_date" type="date" class="w-full px-3 py-2 text-xs bg-surface-elevated rounded-xl border border-line-subtle text-content-primary font-mono" />
           </div>
           <div>
             <label class="block text-xs font-bold text-content-primary mb-1">سبب الاعتذار (يظهر في الرسالة للمرضى)</label>
-            <input v-model="emergencyDayOff.reason" type="text" placeholder="عذر طبي طارئ للطبيب..." class="w-full px-3 py-2 text-xs bg-surface-elevated rounded-xl border border-line-subtle text-content-primary" />
+            <input v-model="emergencyDayOff.reason_ar" type="text" placeholder="عذر طبي طارئ للطبيب..." class="w-full px-3 py-2 text-xs bg-surface-elevated rounded-xl border border-line-subtle text-content-primary" />
           </div>
         </div>
         <div class="px-5 py-3 bg-surface-elevated border-t border-line-subtle flex justify-between">
@@ -387,9 +398,10 @@ const clearDays = () => {
 
 const emergencyDayOff = ref({
   clinic_id: null,
-  off_date: new Date().toISOString().substring(0, 10),
-  reason: 'عذر طارئ للطبيب',
-  action_type: 'auto_reschedule',
+  date: new Date().toISOString().substring(0, 10),
+  reason_ar: 'عذر طارئ للطبيب',
+  action: 'move_to_date',
+  target_date: new Date(Date.now() + 86400000).toISOString().substring(0, 10),
 });
 
 const saving = ref(false);
@@ -477,7 +489,14 @@ const handleEmergencyDayOff = async () => {
   if (!confirmed) return;
   saving.value = true;
   try {
-    const res = await settingsStore.saveDayOff(emergencyDayOff.value);
+    const payload = {
+      clinic_id: emergencyDayOff.value.clinic_id,
+      date: emergencyDayOff.value.date,
+      reason_ar: emergencyDayOff.value.reason_ar,
+      action: emergencyDayOff.value.action,
+      target_date: emergencyDayOff.value.action === 'move_to_date' ? emergencyDayOff.value.target_date : null,
+    };
+    const res = await settingsStore.saveDayOff(payload);
     showEmergencyModal.value = false;
     alerts.success('تم بنجاح', res.message || 'تم تسجيل العطلة وترحيل الحجوزات');
   } catch (e) {

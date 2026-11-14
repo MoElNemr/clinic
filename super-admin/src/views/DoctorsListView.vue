@@ -179,7 +179,8 @@ const impersonate = async (doc) => {
   try {
     const result = await doctorsStore.impersonateDoctor(doc.id);
     const token = result.token;
-    window.open(`http://localhost:5174/workspace?impersonate_token=${token}`, '_blank');
+    const doctorAppUrl = import.meta.env.VITE_DOCTOR_APP_URL || 'http://localhost:5174';
+    window.open(`${doctorAppUrl.replace(/\/+$/, '')}/workspace?impersonate_token=${token}`, '_blank');
   } catch (err) {
     showError('فشل الدخول كطبيب', err.response?.data?.message || 'حدث خطأ أثناء محاولة محاكاة حساب الطبيب');
   }

@@ -17,6 +17,8 @@ import TemplateOrthopedics from '../components/templates/TemplateOrthopedics.vue
 const customSiteModules = import.meta.glob('../custom-sites/*/index.vue', { eager: true });
 
 const { resolveTenant } = useClinicBooking();
+const runtimeConfig = useRuntimeConfig();
+const doctorAppUrl = computed(() => runtimeConfig.public.doctorAppUrl || 'http://localhost:5174');
 
 // SSR Host Resolution
 const headers = useRequestHeaders(['host']);
@@ -91,7 +93,7 @@ const getTemplateComponent = (specialty) => {
     <!-- Doctor Custom / Subdomain Website Mode -->
     <div v-if="doctorTenant">
       <component
-        :is="getTemplateComponent(doctorTenant.medical_specialty)"
+        :is="getTemplateComponent(doctorTenant.specialty_key || doctorTenant.template_key || doctorTenant.title_ar || doctorTenant.medical_specialty)"
         :tenant="doctorTenant"
       />
     </div>
@@ -113,7 +115,7 @@ const getTemplateComponent = (specialty) => {
 
           <div class="flex items-center gap-3">
             <a
-              href="http://localhost:5174"
+              :href="doctorAppUrl"
               target="_blank"
               class="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition"
             >

@@ -30,7 +30,7 @@ class CheckNearTurnNotificationsJob implements ShouldQueue
 
     public function handle(WhatsAppChannelService $whatsappService, SmsGatewayService $smsService): void
     {
-        $clinic = Clinic::find($this->clinicId);
+        $clinic = Clinic::withoutGlobalScope(\App\Scopes\TenantScope::class)->find($this->clinicId);
         if (!$clinic) return;
 
         $tenant = $clinic->tenant;
@@ -38,8 +38,9 @@ class CheckNearTurnNotificationsJob implements ShouldQueue
 
         $threshold = $tenant->notification_settings['near_turn_threshold'] ?? 3;
 
-        // Query remaining queue in order
-        $remaining = Appointment::whereDate('appointment_date', $this->date)
+        // Query remaining queue in order (bypassing TenantScope for queue/CLI context)
+        $remaining = Appointment::withoutGlobalScope(\App\Scopes\TenantScope::class)
+            ->whereDate('appointment_date', $this->date)
             ->where('clinic_id', $this->clinicId)
             ->where('shift_id', $this->shiftId)
             ->whereIn('status', ['arrived_waiting', 'waiting', 'booked'])

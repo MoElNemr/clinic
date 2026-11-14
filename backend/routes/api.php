@@ -72,9 +72,7 @@ Route::prefix('clinic')->group(function () {
         // Doctor Single-Screen Consultation Workspace
         Route::prefix('doctor')->middleware('clinic.auth:doctor')->group(function () {
             Route::get('/current-patient', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'currentPatient']);
-            Route::get('/prescription/{appointmentId}', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'savePrescription']); // fallback
             Route::get('/prescription-templates', [\App\Http\Controllers\Clinic\SettingsController::class, 'getTemplates']);
-            Route::get('/services', [\App\Http\Controllers\Clinic\SettingsController::class, 'getServices']);
             Route::get('/templates', [\App\Http\Controllers\Clinic\SettingsController::class, 'getTemplates']);
             Route::get('/services', [\App\Http\Controllers\Clinic\SettingsController::class, 'getServices']);
             Route::post('/prescription/{appointmentId}', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'savePrescription']);
@@ -89,7 +87,7 @@ Route::prefix('clinic')->group(function () {
         });
 
         // Receptionist Single-Screen Desk
-        Route::prefix('reception')->group(function () {
+        Route::prefix('reception')->middleware('clinic.branch')->group(function () {
             Route::get('/queue', [\App\Http\Controllers\Clinic\ReceptionController::class, 'queue']);
             Route::get('/check-followup', [\App\Http\Controllers\Clinic\ReceptionController::class, 'checkFollowup']);
             Route::post('/quick-book', [\App\Http\Controllers\Clinic\ReceptionController::class, 'quickBook']);
@@ -112,6 +110,8 @@ Route::prefix('clinic')->group(function () {
             Route::delete('/drugs/{id}', [\App\Http\Controllers\Clinic\SettingsController::class, 'deleteDrug']);
 
             Route::get('/services', [\App\Http\Controllers\Clinic\SettingsController::class, 'getServices']);
+            Route::post('/services', [\App\Http\Controllers\Clinic\SettingsController::class, 'saveService']);
+            Route::delete('/services/{id}', [\App\Http\Controllers\Clinic\SettingsController::class, 'deleteService']);
             Route::get('/templates', [\App\Http\Controllers\Clinic\SettingsController::class, 'getTemplates']);
             Route::post('/templates', [\App\Http\Controllers\Clinic\SettingsController::class, 'saveTemplate']);
             Route::delete('/templates/{id}', [\App\Http\Controllers\Clinic\SettingsController::class, 'deleteTemplate']);

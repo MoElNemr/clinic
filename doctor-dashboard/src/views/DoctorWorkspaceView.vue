@@ -381,7 +381,8 @@
     <!-- Modals with dirty backdrop close guard -->
     <ModalPastHistory
       :is-open="showHistoryModal"
-      :patient="workspaceStore.currentPatient?.patient"
+      :visits="workspaceStore.pastVisits"
+      :loading="workspaceStore.loading"
       @close="showHistoryModal = false"
     />
 
@@ -409,12 +410,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useDoctorWorkspaceStore } from '../stores/doctorWorkspace';
 import { useReceptionQueueStore } from '../stores/receptionQueue';
 import { useSettingsStore } from '../stores/settings';
-import { useClinicSocket } from '@/composables/useClinicSocket';
 import ActivePatientCard from '../components/doctor/ActivePatientCard.vue';
 import MedicalAlertBanner from '../components/doctor/MedicalAlertBanner.vue';
 import VitalsStrip from '../components/doctor/VitalsStrip.vue';
@@ -516,12 +516,16 @@ const refreshWorkspace = async () => {
   await queueStore.fetchQueue(null, null, null, true);
 };
 
-const { initSocket, disconnect: disconnectSocket } = useClinicSocket(
-  () => authStore.clinic?.id || authStore.user?.clinic_id,
-  () => authStore.socketToken,
-  async () => {
-    await refreshWorkspace();
-  }
+watch(
+  () => workspaceStore.currentPatient?.patient?.id,
+  (newPatientId) => {
+    if (newPatientId) {
+      workspaceStore.fetchPatientHistory(newPatientId);
+    } else {
+      workspaceStore.pastVisits = [];
+    }
+  },
+  { immediate: true }
 );
 
 const handleNextPatient = async () => {
@@ -575,18 +579,13 @@ const handleKeyDown = (e) => {
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown);
-  initSocket();
   await Promise.all([
     refreshWorkspace(),
     settingsStore.fetchBranches(),
   ]);
-  if (workspaceStore.currentPatient?.patient?.id) {
-    workspaceStore.fetchPatientHistory(workspaceStore.currentPatient.patient.id);
-  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
-  disconnectSocket();
 });
 </script>

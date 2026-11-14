@@ -12,6 +12,13 @@ class Patient extends Model
 
     protected $guarded = ['id'];
 
+    protected $appends = ['age'];
+
+    public function getAgeAttribute(): ?int
+    {
+        return $this->birth_year ? ((int) date('Y') - (int) $this->birth_year) : null;
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);

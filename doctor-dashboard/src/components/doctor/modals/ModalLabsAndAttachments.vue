@@ -161,6 +161,17 @@ const handleUploadAttachment = async () => {
     uploading.value = false;
   }
 };
+
+const openAttachment = async (att) => {
+  try {
+    const res = await client.get(`/doctor/attachments/${att.id}`, { responseType: 'blob' });
+    const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } catch (e) {
+    alerts.error('فشل فتح المستند', 'تعذر تحميل المرفق الطبي');
+  }
+};
 </script>
 
 <template>
@@ -365,14 +376,14 @@ const handleUploadAttachment = async () => {
                   </div>
                 </div>
 
-                <a
-                  :href="att.file_url"
-                  target="_blank"
-                  class="w-full py-1.5 bg-surface-elevated hover:bg-brand-subtle text-brand text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1 transition"
+                <button
+                  type="button"
+                  @click="openAttachment(att)"
+                  class="w-full py-1.5 bg-surface-elevated hover:bg-brand-subtle text-brand text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1 transition cursor-pointer"
                 >
                   <ExternalLink class="w-3.5 h-3.5" />
                   عرض المستند
-                </a>
+                </button>
               </div>
             </div>
           </div>

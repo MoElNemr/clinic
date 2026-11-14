@@ -198,6 +198,44 @@ class SettingsController extends Controller
         return $this->successResponse($services);
     }
 
+    public function saveService(Request $request): JsonResponse
+    {
+        $name = $request->input('name_ar') ?: $request->input('name');
+        $request->merge(['name_ar' => $name]);
+
+        $request->validate([
+            'name_ar' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'clinic_id' => 'nullable|integer',
+        ]);
+
+        $tenantId = $request->user()->tenant_id;
+
+        $service = \App\Models\ClinicService::updateOrCreate(
+            [
+                'id' => $request->input('id'),
+                'tenant_id' => $tenantId,
+            ],
+            [
+                'clinic_id' => $request->input('clinic_id'),
+                'name_ar' => trim($name),
+                'price' => (float) $request->input('price'),
+                'is_active' => $request->boolean('is_active', true),
+            ]
+        );
+
+        return $this->successResponse($service, 'تم حفظ الخدمة الإضافية بنجاح');
+    }
+
+    public function deleteService(int $id, Request $request): JsonResponse
+    {
+        \App\Models\ClinicService::where('tenant_id', $request->user()->tenant_id)
+            ->where('id', $id)
+            ->delete();
+
+        return $this->successResponse(null, 'تم حذف الخدمة بنجاح');
+    }
+
     public function saveTemplate(Request $request): JsonResponse
     {
         $name = $request->input('template_name') ?? $request->input('name');
@@ -250,11 +288,21 @@ class SettingsController extends Controller
 
     public function saveLab(Request $request): JsonResponse
     {
-        $request->validate(['test_name' => 'required']);
+        $testName = $request->input('test_name') ?: $request->input('name');
+        $type = $request->input('type') ?: $request->input('category', 'lab');
+        if (!in_array($type, ['lab', 'radiology'], true)) {
+            $type = 'lab';
+        }
+
+        $request->merge(['test_name' => $testName, 'type' => $type]);
+        $request->validate(['test_name' => 'required|string|max:255']);
 
         $lab = DoctorLabTest::updateOrCreate(
-            ['tenant_id' => $request->user()->tenant_id, 'test_name' => $request->test_name],
-            $request->only(['type'])
+            [
+                'tenant_id' => $request->user()->tenant_id,
+                'test_name' => trim($testName),
+                'type' => $type,
+            ]
         );
 
         return $this->successResponse($lab, 'تم حفظ الفحص بنجاح');
@@ -366,6 +414,38 @@ class SettingsController extends Controller
 
     public function saveDayOff(Request $request): JsonResponse
     {
+        // Normalize payload differences between frontend and backend
+        if (!$request->has('date') && $request->has('off_date')) {
+            $request->merge(['date' => $request->input('off_date')]);
+        }
+        if (!$request->has('reason_ar') && $request->has('reason')) {
+            $request->merge(['reason_ar' => $request->input('reason')]);
+        }
+        if (!$request->has('action') && $request->has('action_type')) {
+            $mappedAction = $request->input('action_type') === 'auto_reschedule' ? 'move_to_date' : 'cancel_and_notify';
+            $request->merge(['action' => $mappedAction]);
+        }
+        if ($request->input('action') === 'move_to_date' && !$request->filled('target_date')) {
+            $sourceDate = Carbon::parse($request->input('date', today()));
+            $clinicId = (int)$request->input('clinic_id');
+            $shifts = ClinicShift::where('clinic_id', $clinicId)->where('is_active', true)->pluck('day_of_week')->toArray();
+            $targetDate = null;
+            if (!empty($shifts)) {
+                $nextDay = $sourceDate->copy()->addDay();
+                for ($i = 0; $i < 7; $i++) {
+                    if (in_array($nextDay->dayOfWeek, $shifts, true)) {
+                        $targetDate = $nextDay->toDateString();
+                        break;
+                    }
+                    $nextDay->addDay();
+                }
+            }
+            if (!$targetDate) {
+                $targetDate = $sourceDate->copy()->addDay()->toDateString();
+            }
+            $request->merge(['target_date' => $targetDate]);
+        }
+
         // Correction 10: Emergency Day-Off Bulk Reschedule / Cancel Handler
         $request->validate([
             'clinic_id' => 'required|integer',

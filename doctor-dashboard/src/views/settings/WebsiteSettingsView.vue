@@ -1206,7 +1206,8 @@ const canUseCustomWebsite = computed(() => Boolean(settingsStore.settings?.tenan
 const currentPlanName = computed(() => settingsStore.settings?.tenant?.plan?.name_ar || 'الأساسية');
 const doctorName = computed(() => settingsStore.settings?.tenant?.name || 'طبيب العيادة');
 const subdomain = computed(() => settingsStore.settings?.tenant?.subdomain || 'dr');
-const fullSubdomainUrl = computed(() => `http://localhost:3000/d/${subdomain.value}`);
+const webPlatformBase = import.meta.env.VITE_WEB_PLATFORM_URL || 'http://localhost:3000';
+const fullSubdomainUrl = computed(() => `${webPlatformBase.replace(/\/+$/, '')}/d/${subdomain.value}`);
 const currentLiveUrl = computed(() => ([2, 4].includes(selectedMode.value) && customDomain.value ? `https://${customDomain.value}` : fullSubdomainUrl.value));
 
 const canUseMode = (mode) => {

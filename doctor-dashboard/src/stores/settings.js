@@ -8,6 +8,7 @@ export const useSettingsStore = defineStore('settings', {
     drugs: [],
     templates: [],
     labs: [],
+    services: [],
     receptionists: [],
     loading: false,
   }),
@@ -15,12 +16,13 @@ export const useSettingsStore = defineStore('settings', {
     async fetchAll() {
       this.loading = true;
       try {
-        const [settingsRes, branchesRes, drugsRes, templatesRes, labsRes, receptionistsRes] = await Promise.all([
+        const [settingsRes, branchesRes, drugsRes, templatesRes, labsRes, servicesRes, receptionistsRes] = await Promise.all([
           client.get('/settings'),
           client.get('/settings/branches'),
           client.get('/settings/drugs'),
           client.get('/settings/templates'),
           client.get('/settings/labs'),
+          client.get('/settings/services'),
           client.get('/settings/receptionists'),
         ]);
 
@@ -29,6 +31,7 @@ export const useSettingsStore = defineStore('settings', {
         this.drugs = drugsRes.data.data;
         this.templates = templatesRes.data.data;
         this.labs = labsRes.data.data;
+        this.services = servicesRes.data.data;
         this.receptionists = receptionistsRes.data.data;
       } finally {
         this.loading = false;
@@ -75,6 +78,25 @@ export const useSettingsStore = defineStore('settings', {
       await client.post('/settings/labs', lab);
       const res = await client.get('/settings/labs');
       this.labs = res.data.data;
+    },
+    async fetchServices() {
+      try {
+        const res = await client.get('/settings/services');
+        this.services = res.data.data;
+        return this.services;
+      } catch (e) {
+        return [];
+      }
+    },
+    async saveService(service) {
+      await client.post('/settings/services', service);
+      const res = await client.get('/settings/services');
+      this.services = res.data.data;
+    },
+    async deleteService(id) {
+      await client.delete(`/settings/services/${id}`);
+      const res = await client.get('/settings/services');
+      this.services = res.data.data;
     },
     async saveBranch(branch) {
       await client.post('/settings/branches', branch);

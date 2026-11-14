@@ -12,6 +12,13 @@ class ClinicService extends Model
 
     protected $guarded = ['id'];
 
+    protected $appends = ['name'];
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->name_ar;
+    }
+
     protected function casts(): array
     {
         return [

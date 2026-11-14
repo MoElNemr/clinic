@@ -391,7 +391,8 @@ const saving = ref(false);
 const impersonate = async () => {
   const result = await doctorsStore.impersonateDoctor(props.doctor.id);
   const token = result.token;
-  window.open(`http://localhost:5174/workspace?impersonate_token=${token}`, '_blank');
+  const doctorAppUrl = import.meta.env.VITE_DOCTOR_APP_URL || 'http://localhost:5174';
+  window.open(`${doctorAppUrl.replace(/\/+$/, '')}/workspace?impersonate_token=${token}`, '_blank');
 };
 
 const save = async () => {

@@ -107,20 +107,28 @@ class DoctorWorkspaceController extends Controller
         $symptoms = $request->input('complaints_symptoms') ?? $request->input('symptoms');
         $notes = $request->input('private_doctor_notes') ?? $request->input('private_notes');
 
-        // Auto-save unknown drugs into doctor_drugs for this tenant
+        // Auto-save unknown drugs into doctor_drugs for this tenant with deduplication & concurrency protection
+        $seenDrugs = [];
         foreach ($drugs as $item) {
-            if (!empty($item['drug_name'])) {
-                DoctorDrug::firstOrCreate(
-                    [
-                        'tenant_id' => $tenantId,
-                        'drug_name' => trim($item['drug_name']),
-                    ],
-                    [
-                        'form_type' => $item['form_type'] ?? 'أقراص',
-                        'default_dosage' => $item['dosage'] ?? null,
-                        'default_duration' => $item['duration'] ?? null,
-                    ]
-                );
+            $cleanName = isset($item['drug_name']) ? trim($item['drug_name']) : '';
+            $lowerKey = mb_strtolower($cleanName, 'UTF-8');
+            if ($cleanName !== '' && !isset($seenDrugs[$lowerKey])) {
+                $seenDrugs[$lowerKey] = true;
+                try {
+                    DoctorDrug::updateOrCreate(
+                        [
+                            'tenant_id' => $tenantId,
+                            'drug_name' => $cleanName,
+                        ],
+                        [
+                            'form_type' => $item['form_type'] ?? 'أقراص',
+                            'default_dosage' => $item['dosage'] ?? null,
+                            'default_duration' => $item['duration'] ?? null,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    \Log::info("DoctorDrug upsert ignored duplicate: " . $e->getMessage());
+                }
             }
         }
 
@@ -174,16 +182,28 @@ class DoctorWorkspaceController extends Controller
 
         $labs = $request->input('requested_labs', $request->input('lab_requests', []));
 
-        // Auto-save unknown lab tests into doctor_lab_tests
+        // Auto-save unknown lab tests into doctor_lab_tests with deduplication & concurrency protection
+        $seenLabs = [];
         foreach ($labs as $test) {
-            if (!empty($test['test_name'])) {
-                DoctorLabTest::firstOrCreate(
-                    [
-                        'tenant_id' => $tenantId,
-                        'test_name' => trim($test['test_name']),
-                        'type' => $test['type'] ?? 'lab',
-                    ]
-                );
+            $cleanName = isset($test['test_name']) ? trim($test['test_name']) : '';
+            $type = $test['type'] ?? $test['category'] ?? 'lab';
+            if (!in_array($type, ['lab', 'radiology'], true)) {
+                $type = 'lab';
+            }
+            $lowerKey = mb_strtolower($cleanName . '_' . $type, 'UTF-8');
+            if ($cleanName !== '' && !isset($seenLabs[$lowerKey])) {
+                $seenLabs[$lowerKey] = true;
+                try {
+                    DoctorLabTest::updateOrCreate(
+                        [
+                            'tenant_id' => $tenantId,
+                            'test_name' => $cleanName,
+                            'type' => $type,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    \Log::info("DoctorLabTest upsert ignored duplicate: " . $e->getMessage());
+                }
             }
         }
 
@@ -407,6 +427,7 @@ class DoctorWorkspaceController extends Controller
         return $this->successResponse([
             'patient' => $patient,
             'visits' => $visits,
+            'attachments' => $patient->attachments()->latest()->get(),
         ]);
     }
 

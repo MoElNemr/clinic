@@ -274,6 +274,36 @@ class DemoDataSeeder extends Seeder
             ],
         ]);
 
+        // Clinic Extra Services
+        \App\Models\ClinicService::create([
+            'tenant_id' => $tenant->id,
+            'clinic_id' => null,
+            'name_ar' => 'سونار موجات صوتية على البطن والحوض',
+            'price' => 250,
+            'is_active' => true,
+        ]);
+        \App\Models\ClinicService::create([
+            'tenant_id' => $tenant->id,
+            'clinic_id' => null,
+            'name_ar' => 'منظار قولون تشخيصي',
+            'price' => 1200,
+            'is_active' => true,
+        ]);
+        \App\Models\ClinicService::create([
+            'tenant_id' => $tenant->id,
+            'clinic_id' => null,
+            'name_ar' => 'منظار معدة ومريء تشخيصي',
+            'price' => 950,
+            'is_active' => true,
+        ]);
+        \App\Models\ClinicService::create([
+            'tenant_id' => $tenant->id,
+            'clinic_id' => null,
+            'name_ar' => 'رسم قلب كهربائي (ECG)',
+            'price' => 150,
+            'is_active' => true,
+        ]);
+
         // 6. 10 Realistic Demo Patients & Today's Live Queue in Branch 1 (Evening Shift)
         $todayShift = $branchNasr->shifts()->where('day_of_week', Carbon::today()->dayOfWeek)->where('shift_name_ar', 'الفترة المسائية')->first()
             ?? $branchNasr->shifts()->first();

@@ -139,9 +139,9 @@ class ReceptionController extends Controller
                 $visitType = $followupCheck['eligible'] ? 'followup' : 'new_visit';
             }
 
-            $fee = ($visitType === 'followup')
-                ? (float)$clinic->followup_price
-                : (float)$clinic->consultation_price;
+            $fee = $request->filled('custom_fee') && is_numeric($request->custom_fee) && (float)$request->custom_fee >= 0
+                ? (float)$request->custom_fee
+                : (($visitType === 'followup') ? (float)$clinic->followup_price : (float)$clinic->consultation_price);
 
             // Next queue number with lockForUpdate to prevent race collision
             $maxQueue = Appointment::where('clinic_id', $clinic->id)

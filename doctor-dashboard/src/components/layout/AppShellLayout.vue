@@ -283,7 +283,16 @@ const queueCounts = computed(() => {
 const doctorWebsiteUrl = computed(() => {
   const tenant = authStore.user?.tenant || authStore.tenant;
   if (!tenant?.subdomain) return null;
-  return `http://${tenant.subdomain}.localhost:3000`;
+  const baseWeb = import.meta.env.VITE_WEB_PLATFORM_URL || 'http://localhost:3000';
+  if (baseWeb.includes('localhost')) {
+    return `http://${tenant.subdomain}.localhost:3000`;
+  }
+  try {
+    const parsed = new URL(baseWeb);
+    return `${parsed.protocol}//${tenant.subdomain}.${parsed.host}`;
+  } catch (e) {
+    return `http://${tenant.subdomain}.localhost:3000`;
+  }
 });
 
 const isRouteActive = (prefix) => {

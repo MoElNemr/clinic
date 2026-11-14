@@ -66,6 +66,18 @@
           <Sparkles class="w-3.5 h-3.5" />
           <span>قوالب الروشتات ({{ settingsStore.templates?.length || 0 }})</span>
         </button>
+
+        <button
+          type="button"
+          @click="activeTab = 'services'"
+          class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+          :class="activeTab === 'services'
+            ? 'bg-brand text-content-inverse shadow-xs'
+            : 'bg-surface-elevated text-content-secondary hover:text-content-primary'"
+        >
+          <Plus class="w-3.5 h-3.5" />
+          <span>الخدمات الإضافية ({{ settingsStore.services?.length || 0 }})</span>
+        </button>
       </div>
     </div>
 
@@ -580,6 +592,70 @@
         </div>
       </div>
     </div>
+
+    <!-- Tab 6: Extra Services -->
+    <div v-if="activeTab === 'services'" class="space-y-5">
+      <div>
+        <h3 class="text-sm font-bold text-content-primary">الخدمات الإضافية وتسعير الإجراءات (Clinic Services)</h3>
+        <p class="text-xs text-content-muted">إضافة خدمات إضافية (سونار، رسم قلب، جلسات، مناظير) لتظهر للطبيب أثناء الكشف وللاستقبال لتحصيلها في الخزينة</p>
+      </div>
+
+      <!-- Add Service Form -->
+      <div class="bg-surface-elevated border border-line-subtle p-3.5 rounded-2xl space-y-3">
+        <h4 class="text-xs font-bold text-content-primary flex items-center gap-1.5">
+          <Plus class="w-4 h-4 text-brand" />
+          <span>إضافة خدمة إضافية جديدة</span>
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <input
+            v-model="newService.name_ar"
+            type="text"
+            placeholder="اسم الخدمة (سونار بطن، رسم قلب، غيار جروح...)"
+            class="px-3 py-2 text-xs bg-surface-card rounded-xl border border-line-subtle text-content-primary focus:outline-none focus:border-brand"
+          />
+          <input
+            v-model.number="newService.price"
+            type="number"
+            min="0"
+            placeholder="السعر (ج.م)..."
+            class="px-3 py-2 text-xs bg-surface-card rounded-xl border border-line-subtle text-content-primary focus:outline-none focus:border-brand font-mono"
+          />
+          <button
+            type="button"
+            @click="handleSaveService"
+            class="px-4 py-2 bg-brand hover:bg-brand-hover text-content-inverse rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Plus class="w-4 h-4" />
+            <span>حفظ الخدمة</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Services Table / Cards -->
+      <div v-if="!settingsStore.services || settingsStore.services.length === 0" class="p-8 text-center bg-surface-elevated rounded-2xl border border-dashed border-line-subtle text-xs text-content-muted">
+        لا توجد خدمات إضافية مسجلة بعد. استخدم النموذج أعلاه لإضافة خدمات عيادتك.
+      </div>
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div
+          v-for="svc in settingsStore.services"
+          :key="svc.id"
+          class="p-3.5 bg-surface-elevated border border-line-subtle rounded-xl flex items-center justify-between"
+        >
+          <div>
+            <p class="text-xs font-bold text-content-primary">{{ svc.name || svc.name_ar }}</p>
+            <p class="text-xs font-extrabold text-brand font-mono mt-0.5">{{ svc.price }} ج.م</p>
+          </div>
+          <button
+            type="button"
+            @click="handleDeleteService(svc.id)"
+            class="p-1.5 text-status-danger hover:bg-status-danger-bg rounded-lg transition cursor-pointer"
+            title="حذف الخدمة"
+          >
+            <Trash2 class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -635,6 +711,7 @@ const newDrug = ref({
 });
 
 const newLab = ref({ name: '', category: 'lab' });
+const newService = ref({ name_ar: '', price: 0 });
 
 const editingTemplateId = ref(null);
 const templateFormRef = ref(null);
@@ -838,6 +915,34 @@ const handleSaveLab = async () => {
     alerts.toast('تمت إضافة الفحص بنجاح');
   } catch (e) {
     alerts.error('فشل إضافة الفحص', e.response?.data?.message || 'حدث خطأ أثناء حفظ الفحص');
+  }
+};
+
+const handleSaveService = async () => {
+  if (!newService.value.name_ar?.trim()) {
+    alerts.warning('يرجى إدخال اسم الخدمة الإضافية');
+    return;
+  }
+  try {
+    await settingsStore.saveService({
+      name_ar: newService.value.name_ar.trim(),
+      price: Number(newService.value.price || 0),
+    });
+    newService.value = { name_ar: '', price: 0 };
+    alerts.toast('تمت إضافة الخدمة بنجاح');
+  } catch (e) {
+    alerts.error('فشل حفظ الخدمة', e.response?.data?.message || 'حدث خطأ أثناء حفظ الخدمة الإضافية');
+  }
+};
+
+const handleDeleteService = async (id) => {
+  const confirmed = await alerts.confirm('تأكيد الحذف', 'هل أنت متأكد من حذف هذه الخدمة؟', 'نعم، احذف');
+  if (!confirmed) return;
+  try {
+    await settingsStore.deleteService(id);
+    alerts.toast('تم حذف الخدمة بنجاح');
+  } catch (e) {
+    alerts.error('فشل حذف الخدمة', e.response?.data?.message || 'حدث خطأ');
   }
 };
 
