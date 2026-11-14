@@ -779,7 +779,14 @@ onMounted(async () => {
     || settingsStore.settings?.tenant?.vitals_config
     || authStore.tenant?.vitals_config;
   if (Array.isArray(cfg) && cfg.length > 0) {
-    vitalsList.value = cfg;
+    const existingKeys = new Set(cfg.map(v => v.key));
+    const merged = [...cfg];
+    defaultVitalsList.forEach(def => {
+      if (!existingKeys.has(def.key)) {
+        merged.push({ ...def, enabled: false });
+      }
+    });
+    vitalsList.value = merged;
   }
   const printCfg = settingsStore.settings?.print_settings
     || settingsStore.settings?.tenant?.print_settings
@@ -810,19 +817,30 @@ const removeVital = (idx) => {
 };
 
 const saveVitals = async () => {
+  if (newVital.value.label && newVital.value.label.trim()) {
+    addCustomVital();
+  }
   saving.value = true;
   try {
-    await settingsStore.updateVitals(vitalsList.value);
+    const res = await settingsStore.updateVitals(vitalsList.value);
     await authStore.fetchProfile();
-    const cfg = settingsStore.settings?.vitals_config
+    const cfg = res?.data
+      || settingsStore.settings?.vitals_config
       || settingsStore.settings?.tenant?.vitals_config
       || authStore.tenant?.vitals_config;
     if (Array.isArray(cfg) && cfg.length > 0) {
-      vitalsList.value = cfg;
+      const existingKeys = new Set(cfg.map(v => v.key));
+      const merged = [...cfg];
+      defaultVitalsList.forEach(def => {
+        if (!existingKeys.has(def.key)) {
+          merged.push({ ...def, enabled: false });
+        }
+      });
+      vitalsList.value = merged;
     }
-    alerts.success('تم الحفظ بنجاح', 'تم تحديث قائمة القياسات الحيوية وسيرى موظف الاستقبال القياسات الجديدة فوراً');
+    alerts.success('تم الحفظ بنجاح', 'تم تحديث قائمة القياسات الحيوية وسيرى موظف الاستقبال وطبيب الكشف القياسات الجديدة فوراً');
   } catch (e) {
-    alerts.error('فشل حفظ الإعدادات', e.response?.data?.message || 'حدث خطأ');
+    alerts.error('فشل حفظ الإعدادات', e.response?.data?.message || 'حدث خطأ أثناء الحفظ');
   } finally {
     saving.value = false;
   }

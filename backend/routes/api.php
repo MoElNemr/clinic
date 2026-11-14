@@ -76,6 +76,7 @@ Route::prefix('clinic')->group(function () {
             Route::get('/templates', [\App\Http\Controllers\Clinic\SettingsController::class, 'getTemplates']);
             Route::get('/services', [\App\Http\Controllers\Clinic\SettingsController::class, 'getServices']);
             Route::post('/prescription/{appointmentId}', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'savePrescription']);
+            Route::post('/vitals/{appointmentId}', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'saveVitals']);
             Route::post('/labs/{appointmentId}', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'saveLabsAndNotes']);
             Route::post('/services-and-followup/{appointmentId}', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'saveExtraServicesAndFollowup']);
             Route::post('/next-patient', [\App\Http\Controllers\Clinic\DoctorWorkspaceController::class, 'completeAndCallNextPatient']);

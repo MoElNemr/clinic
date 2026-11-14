@@ -347,6 +347,8 @@ class ReceptionController extends Controller
             'vitals_data' => $vitals,
         ]);
 
+        event(new \App\Events\QueueUpdatedEvent($appointment->clinic_id, $appointment->shift_id, $appointment->appointment_date));
+
         return $this->successResponse($appointment, 'تم تسجيل القياسات بنجاح');
     }
 

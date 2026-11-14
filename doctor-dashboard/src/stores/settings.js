@@ -47,8 +47,11 @@ export const useSettingsStore = defineStore('settings', {
       }
     },
     async updateVitals(vitals) {
-      await client.post('/settings/vitals', { vitals_config: vitals });
-      await this.fetchAll();
+      const res = await client.post('/settings/vitals', { vitals_config: vitals });
+      if (this.settings) {
+        this.settings.vitals_config = res.data.data;
+      }
+      return res.data;
     },
     async updatePrintMargins(margins) {
       await client.post('/settings/print-margins', { print_settings: margins });

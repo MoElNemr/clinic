@@ -31,6 +31,11 @@ export const useDoctorWorkspaceStore = defineStore('doctorWorkspace', {
         if (!silent) this.loading = false;
       }
     },
+    async saveVitals(appointmentId, payload) {
+      const response = await client.post(`/doctor/vitals/${appointmentId}`, payload);
+      await this.fetchCurrentPatient(null, true);
+      return response.data;
+    },
     async savePrescription(appointmentId, payload) {
       const response = await client.post(`/doctor/prescription/${appointmentId}`, payload);
       await this.fetchCurrentPatient();

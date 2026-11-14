@@ -160,11 +160,13 @@
           <ActivePatientCard :appointment="workspaceStore.currentPatient" />
 
           <VitalsStrip
+            :allow-edit="true"
             :vitals-config="vitalsConfig"
             :current="workspaceStore.currentPatient.vitals_data"
             :today-vitals="workspaceStore.currentPatient.vitals_data"
             :previous="workspaceStore.previousVitals"
             :previous-vitals="workspaceStore.previousVitals"
+            @edit="showVitalsModal = true"
           />
 
           <!-- 3. THE 4 CLINICAL ACTION CARDS (2x2 Bento Grid) -->
@@ -406,6 +408,14 @@
       @close="showExtraModal = false"
       @saved="refreshWorkspace"
     />
+
+    <ModalVitalsEntry
+      :is-open="showVitalsModal"
+      :appointment="workspaceStore.currentPatient"
+      :vitals-schema="vitalsConfig"
+      @close="showVitalsModal = false"
+      @saved="handleVitalsSaved"
+    />
   </div>
 </template>
 
@@ -422,6 +432,7 @@ import ModalPastHistory from '../components/doctor/modals/ModalPastHistory.vue';
 import ModalPrescription from '../components/doctor/modals/ModalPrescription.vue';
 import ModalLabsAndAttachments from '../components/doctor/modals/ModalLabsAndAttachments.vue';
 import ModalExtraServicesAndFollowup from '../components/doctor/modals/ModalExtraServicesAndFollowup.vue';
+import ModalVitalsEntry from '../components/reception/modals/ModalVitalsEntry.vue';
 import alerts from '../utils/alerts';
 import {
   Clock,
@@ -451,6 +462,14 @@ const showHistoryModal = ref(false);
 const showPrescriptionModal = ref(false);
 const showLabsModal = ref(false);
 const showExtraModal = ref(false);
+const showVitalsModal = ref(false);
+
+const handleVitalsSaved = async (vitalsData) => {
+  if (workspaceStore.currentPatient) {
+    workspaceStore.currentPatient.vitals_data = vitalsData;
+  }
+  await workspaceStore.fetchCurrentPatient(null, true);
+};
 
 const vitalsConfig = computed(() => {
   return authStore.tenant?.vitals_config || authStore.user?.tenant?.vitals_config || [];

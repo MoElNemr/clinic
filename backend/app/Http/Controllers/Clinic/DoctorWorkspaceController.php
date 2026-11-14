@@ -87,6 +87,22 @@ class DoctorWorkspaceController extends Controller
         ]);
     }
 
+    public function saveVitals($appointmentId, Request $request): JsonResponse
+    {
+        $appointmentId = (int)$appointmentId;
+        $tenantId = $request->user()->tenant_id;
+        $appointment = Appointment::where('tenant_id', $tenantId)->findOrFail($appointmentId);
+        $vitals = $request->input('vitals_data', $request->input('vitals', []));
+
+        $appointment->update([
+            'vitals_data' => $vitals,
+        ]);
+
+        event(new \App\Events\QueueUpdatedEvent($appointment->clinic_id, $appointment->shift_id, $appointment->appointment_date));
+
+        return $this->successResponse($appointment, 'تم تسجيل القياسات بنجاح');
+    }
+
     public function savePrescription($appointmentId, Request $request): JsonResponse
     {
         $appointmentId = (int)$appointmentId;

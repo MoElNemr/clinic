@@ -5,7 +5,18 @@
         <span>🩺</span>
         <span>القياسات الحيوية (مقارنة بالزيارة السابقة)</span>
       </span>
-      <span class="text-[10px] text-content-muted">مسجلة بواسطة الاستقبال</span>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] text-content-muted">مسجلة بواسطة الاستقبال</span>
+        <button
+          v-if="allowEdit"
+          type="button"
+          @click="$emit('edit')"
+          class="px-2.5 py-1 bg-brand text-content-inverse hover:bg-brand-hover rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shadow-xs"
+        >
+          <Activity class="w-3 h-3" />
+          <span>تسجيل / تعديل القياسات</span>
+        </button>
+      </div>
     </div>
 
     <div v-if="enabledVitals.length === 0" class="text-xs text-content-muted py-2 text-center">
@@ -34,8 +45,15 @@
 
 <script setup>
 import { computed } from 'vue';
+import { Activity } from 'lucide-vue-next';
+
+defineEmits(['edit']);
 
 const props = defineProps({
+  allowEdit: {
+    type: Boolean,
+    default: false,
+  },
   vitalsConfig: {
     type: [Array, Object],
     default: () => [],

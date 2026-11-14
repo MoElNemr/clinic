@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useReceptionQueueStore } from '../../../stores/receptionQueue';
+import client from '../../../api/client';
 import alerts from '../../../utils/alerts';
 import { Activity, X, Check, Heart } from 'lucide-vue-next';
 
@@ -158,9 +159,14 @@ const handleSave = async () => {
       }
     });
 
-    await queueStore.saveVitals(props.appointment.id, vitalsData);
+    try {
+      await queueStore.saveVitals(props.appointment.id, vitalsData);
+    } catch (err) {
+      await client.post(`/doctor/vitals/${props.appointment.id}`, { vitals_data: vitalsData });
+    }
+
     alerts.toast('تم حفظ القياسات الحيوية للمريض بنجاح');
-    emit('saved');
+    emit('saved', vitalsData);
     emit('close');
   } catch (e) {
     alerts.error('فشل حفظ العلامات الحيوية', e.response?.data?.message || 'حدث خطأ أثناء الحفظ');

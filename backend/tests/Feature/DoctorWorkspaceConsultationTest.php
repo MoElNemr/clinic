@@ -290,4 +290,34 @@ class DoctorWorkspaceConsultationTest extends TestCase
         $this->assertCount(1, $data);
         $this->assertEquals('Cataflam 50mg', $data[0]['drug_name']);
     }
+
+    /**
+     * Test doctor can save patient vitals in consultation cockpit.
+     */
+    public function test_doctor_can_save_vitals_on_appointment(): void
+    {
+        $token = $this->doctor->createToken('doc_tok', ['role:doctor'])->plainTextToken;
+
+        $vitalsPayload = [
+            'vitals_data' => [
+                'bp' => '120/80',
+                'pulse' => 76,
+                'temp' => 37.2,
+                'weight' => 80,
+                'custom_waist' => 92,
+            ],
+        ];
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/clinic/doctor/vitals/{$this->appointment->id}", $vitalsPayload);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $this->appointment->refresh();
+        $this->assertNotNull($this->appointment->vitals_data);
+        $this->assertEquals('120/80', $this->appointment->vitals_data['bp']);
+        $this->assertEquals(76, $this->appointment->vitals_data['pulse']);
+        $this->assertEquals(92, $this->appointment->vitals_data['custom_waist']);
+    }
 }
